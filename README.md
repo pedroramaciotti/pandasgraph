@@ -1,2 +1,2 @@
 # pandasgraph
-A module of graph algorithms for pandas
+A module for graph algorithms in pandas 
