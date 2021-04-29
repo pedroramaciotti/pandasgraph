@@ -1,2 +1,3 @@
-# pandasgraph
-A module for graph algorithms in pandas 
+# Pandasgraph
+
+A pandas-based module for fast graph algorithms
