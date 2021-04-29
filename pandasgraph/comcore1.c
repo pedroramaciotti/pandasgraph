@@ -18,10 +18,8 @@ i0 i1 i2 ... in is the list of the nodes in the community.
 //#include <math.h>
 //#include <omp.h>
 
-
 #define NLINKS 200000000 //Maximum number of links, will automatically increase if needed.
 #define NNODES 100000000 //Maximum number of nodes, will automatically increase if needed.
-
 
 //bipartite graph structure
 typedef struct {
