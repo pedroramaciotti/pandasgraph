@@ -7,8 +7,7 @@ with open('requirements.txt') as f:
 
 
 setup(name='pandasgraph',
-      packages = ['pandasgraph'],
-      version='0.0.0',
+      version='0.0.1',
       description='A pandas-based module for fast graph algorithms',
       author='Julio Laborde, Pedro Ramaciotti Morales',
       author_email='pedro.ramaciotti@gmail.com',
