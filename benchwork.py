@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 
-
+with open('requirements.txt') as f:
+    INSTALL_REQUIRES = [l.strip() for l in f.readlines() if l]
 # # Assigning ids to users in the log
 # Log_df['user_node_id'] = Log_df['user_id'].map(pd.Series(index=LogUsers_df['user_id'].values,data=LogUsers_df['user_node_id'].values))
 # Log_df['user_node_id'].isna().sum() # -> 0

@@ -7,6 +7,7 @@ with open('requirements.txt') as f:
 
 
 setup(name='pandasgraph',
+      packages = ['pandasgraph'],
       version='0.0.0',
       description='A pandas-based module for fast graph algorithms',
       author='Julio Laborde, Pedro Ramaciotti Morales',
@@ -18,4 +19,4 @@ setup(name='pandasgraph',
       license='OSI Approved :: MIT License',
       #classifiers=["License :: OSI Approved :: Apache License, Version 2.0 (Apache-2.0)"],
       data_files=[('', ['LICENSE'])],
-      install_requires=INSTALL_REQUIRES)
+      install_requires=['numpy==1.20.2', 'pandas==1.2.4'])
