@@ -10,6 +10,7 @@ i0 i1 i2 ... in is the list of the nodes in the community.
 - pair.txt contains the list of all pairs of nodes appearing in more that k times in a same community: "node1 node2 times" on each line.
 */
 
+#include <Python.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -176,6 +177,180 @@ void pairs(bigraph *g, unsigned k, char* output){
 	fclose(file);
 }
 
+///////////////////////////////////////// PyStuff
+
+static PyObject *project_graph(PyObject *self, PyObject *args);
+
+
+static PyMethodDef module_methods[] = {
+    {"project_graph",  project_graph, METH_VARARGS},
+    {NULL, NULL}  /* Sentinel */
+};
+
+
+static struct PyModuleDef comcore1 =
+{
+    PyModuleDef_HEAD_INIT,
+    "comcore1",  /* name of module */
+    "",          /* module documentation, may be NULL */
+    -1,          /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
+    module_methods
+};
+
+PyMODINIT_FUNC PyInit_comcore1(void)
+{
+    return PyModule_Create(&comcore1);
+}
+
+static PyObject *project_graph(PyObject *self, PyObject *args){
+	unsigned k;
+
+	time_t t0,t1,t2;
+	t1=time(NULL);
+	t0=t1;
+
+	//printf("Reading comminities from file %s\n",argv[2]);
+	//g=readcoms(argv[2]);
+
+	//////////////
+
+    PyObject *pList;
+    PyObject *pInnerList;
+    PyObject *pItem;
+    Py_ssize_t n;
+    Py_ssize_t inner_n;
+    int j1, j2;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyList_Type, &pList)) {
+        PyErr_SetString(PyExc_TypeError, "parameter must be a list.");
+        return NULL;
+    }
+
+	unsigned e1=NLINKS,n1=NNODES,u,v,i,max;
+	char c;
+	bigraph *g=malloc(sizeof(bigraph));
+	FILE *file;
+
+	g->nb=0;
+	g->nt=0;
+	g->e=0;
+	g->dt=calloc(n1,sizeof(unsigned));
+	g->adjt=malloc(e1*sizeof(unsigned));
+
+    n = PyList_Size(pList);
+    for (j1=0; j1<n; j1++) {
+        pInnerList = PyList_GetItem(pList, j1);
+        if(!PyList_Check(pInnerList)) {
+            PyErr_SetString(PyExc_TypeError, "external list items must be a list.");
+            return NULL;
+        }
+        else {
+            inner_n = PyList_Size(pInnerList);
+            for (j2=0; j2<inner_n; j2++) {
+                pItem = PyList_GetItem(pInnerList, j2);
+                if(!PyLong_Check(pItem)) {
+                    PyErr_SetString(PyExc_TypeError, "inner list items must be a float.");
+                    return NULL;
+                }
+                else {
+                    long int u = PyLong_AsLong(pItem);
+					g->adjt[g->e]=u;
+					g->dt[g->nt]++;
+					if (++g->e==e1) {
+						//printf("increasing maximum number of edges\n");
+						e1+=NLINKS;
+						g->adjt=realloc(g->adjt,e1*sizeof(unsigned));
+					}
+					g->nb=(g->nb>u+1)?g->nb:u+1;
+                }
+            }
+			
+			if (++g->nt==n1) {
+				//printf("increasing maximum number of nodes\n");
+				g->dt=realloc(g->dt,(n1+NNODES)*sizeof(unsigned));
+				bzero(g->dt+n1,NNODES*sizeof(unsigned));
+				n1+=NNODES;
+			}
+        }
+    }
+
+	g->adjt=realloc(g->adjt,g->e*sizeof(unsigned));
+	g->dt=realloc(g->dt,g->nt*sizeof(unsigned));
+
+	g->cdt=malloc((g->nt+1)*sizeof(unsigned));
+	g->cdt[0]=0;
+	max=0;
+	for (u=0;u<g->nt;u++){
+		g->cdt[u+1]=g->cdt[u]+g->dt[u];
+		max=(g->dt[u]>max)?g->dt[u]:max;
+	}
+	printf("Maximum top degree: %u\n",max);
+
+	g->db=calloc(g->nb,sizeof(unsigned));
+	for (i=0;i<g->e;i++){
+		g->db[g->adjt[i]]++;
+	}
+
+	g->cdb=malloc((g->nb+1)*sizeof(unsigned));
+	g->cdb[0]=0;
+	max=0;
+	for (i=0;i<g->nb;i++){
+		g->cdb[i+1]=g->cdb[i]+g->db[i];
+		max=(g->db[i]>max)?g->db[i]:max;
+	}
+	printf("Maximum bot degree: %u\n",max);
+
+	g->adjb=malloc(g->e*sizeof(unsigned));
+	bzero(g->db,g->nb*sizeof(unsigned));
+	for (u=0;u<g->nt;u++){
+		for (i=g->cdt[u];i<g->cdt[u+1];i++) {
+			v=g->adjt[i];
+			g->adjb[g->cdb[v]+g->db[v]++]=u;
+			//printf("%u %u\n",u,v);
+		}
+	}
+
+	//Sorting bottom nodes to save time later...
+	for (u=0;u<g->nb;u++){
+		qsort(g->adjb+g->cdb[u],g->db[u],sizeof(unsigned),cmpfunc);
+	}
+
+	/////////////
+
+	t2=time(NULL);
+	printf("- Time = %ldh%ldm%lds\n",(t2-t1)/3600,((t2-t1)%3600)/60,((t2-t1)%60));
+	t1=t2;
+
+	printf("Number of top nodes (communities): %u\n",g->nt);
+	printf("Number of bottom nodes (nodes): %u\n",g->nb);
+	printf("Number of edges: %u\n",g->e);
+
+	t2=time(NULL);
+	printf("- Time = %ldh%ldm%lds\n",(t2-t1)/3600,((t2-t1)%3600)/60,((t2-t1)%60));
+	t1=t2;
+
+	// printf("finding pairs of nodes in more than %s communities\n",argv[1]);
+	// k=atoi(argv[1]);
+	// printf("printing them in file %s\n",argv[3]);
+	// pairs(g,k,argv[3]);
+
+	printf("finding pairs of nodes in more than %s communities\n","1");
+	k=1;
+	printf("printing them in file %s\n","py_output.csv");
+	pairs(g,k,"py_output.csv");
+
+	t2=time(NULL);
+	printf("- Time = %ldh%ldm%lds\n",(t2-t1)/3600,((t2-t1)%3600)/60,((t2-t1)%60));
+	t1=t2;
+
+	freebigraph(g);
+
+	return Py_BuildValue("L", 0);
+}
+
+
+/////////////////////////////////////////
+
 int main(int argc,char** argv){
 	bigraph* g;
 	unsigned i,k;
@@ -212,4 +387,3 @@ int main(int argc,char** argv){
 
 	return 0;
 }
-

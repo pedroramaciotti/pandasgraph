@@ -1,5 +1,5 @@
 """`setup.py`"""
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 
 # Package requirements
 with open('requirements.txt') as f:
@@ -14,8 +14,9 @@ setup(name='pandasgraph',
       url = 'https://github.com/pedroramaciotti/pandasgraph',
       download_url = 'https://github.com/pedroramaciotti/pandasgraph/archive/0.0.0.tar.gz',
       keywords = ['pandas','graph algorithms'],
+      ext_modules = [Extension('comcore1', sources = ['pandasgraph/c/comcore1.c'])],
       packages=find_packages(),
       license='OSI Approved :: MIT License',
       #classifiers=["License :: OSI Approved :: Apache License, Version 2.0 (Apache-2.0)"],
       data_files=[('', ['LICENSE'])],
-      install_requires=['numpy==1.20.2', 'pandas==1.2.4'])
+      install_requires=['numpy==1.19', 'pandas==1.1.5'])
